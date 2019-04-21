@@ -18,53 +18,83 @@ class ViewController: UIViewController, URLSessionDownloadDelegate {
         label.font = UIFont.boldSystemFont(ofSize: 32)
         return label
     }()
+    
+    override var preferredStatusBarStyle: UIStatusBarStyle {
+        return .lightContent
+    }
+    
+    private func setupNotificationObservers() {
+        NotificationCenter.default.addObserver(self, selector: #selector(handleEnterForeground), name: NSNotification.Name.NSExtensionHostWillEnterForeground, object: nil)
+    }
+    
+    @objc private func handleEnterForeground() {
+        animatePulseLayer()
+    }
 
     // create shape layer
     let shapeLayer = CAShapeLayer()
+    
+    var pulseLayer: CAShapeLayer!
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        
-        view.addSubview(percentageLabel)
-        percentageLabel.frame = CGRect(x: 0, y: 0, width: 100, height: 100)
-        percentageLabel.center = view.center
+        view.backgroundColor = UIColor.backgroundColor
         
 //        let center = view.center
         
         // create track layer
         let trackLayer = CAShapeLayer()
         let circularPath = UIBezierPath(arcCenter: .zero, radius: 100, startAngle: 0, endAngle: 2 * CGFloat.pi, clockwise: true)
+        
+        pulseLayer = CAShapeLayer()
+        pulseLayer.path = circularPath.cgPath
+        pulseLayer.strokeColor = UIColor.clear.cgColor
+        pulseLayer.lineWidth = 7
+        pulseLayer.lineCap = CAShapeLayerLineCap.round
+        pulseLayer.fillColor = UIColor.pulseFillColor.cgColor
+        pulseLayer.position = view.center
+        view.layer.addSublayer(pulseLayer)
+        animatePulseLayer()
+        
         trackLayer.path = circularPath.cgPath
-        
-        trackLayer.strokeColor = UIColor.lightGray.cgColor
-        trackLayer.lineWidth = 7
+        trackLayer.strokeColor = UIColor.trackStrokeColor.cgColor
+        trackLayer.lineWidth = 20
         trackLayer.lineCap = CAShapeLayerLineCap.round
-        trackLayer.fillColor = UIColor.clear.cgColor
+        trackLayer.fillColor = UIColor.backgroundColor.cgColor
         trackLayer.position = view.center
-        
         view.layer.addSublayer(trackLayer)
         
         // set shape layer
         shapeLayer.path = circularPath.cgPath
-        
-        shapeLayer.strokeColor = UIColor.red.cgColor
-        shapeLayer.lineWidth = 7
+        shapeLayer.strokeColor = UIColor.outlineStrokeColor.cgColor
+        shapeLayer.lineWidth = 20
         shapeLayer.lineCap = CAShapeLayerLineCap.round
         shapeLayer.fillColor = UIColor.clear.cgColor
         shapeLayer.position = view.center
-        
         shapeLayer.transform = CATransform3DMakeRotation(-.pi / 2, 0, 0, 1)
-        
         shapeLayer.strokeEnd = 0
-        
         view.layer.addSublayer(shapeLayer)
         
         view.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(handleTap)))
+        
+        view.addSubview(percentageLabel)
+        percentageLabel.frame = CGRect(x: 0, y: 0, width: 100, height: 100)
+        percentageLabel.center = view.center
+    }
+    
+    private func animatePulseLayer() {
+        let animation = CABasicAnimation(keyPath: "transform.scale")
+        
+        animation.toValue = 1.5
+        animation.duration = 0.8
+        animation.timingFunction = CAMediaTimingFunction(name: CAMediaTimingFunctionName.easeOut)
+        animation.autoreverses = true
+        animation.repeatCount = Float.infinity
+        
+        pulseLayer.add(animation, forKey: "pulse")
     }
     
     let urlString = "https://archive.org/download/youtube-oHg5SJYRHA0/RickRoll_D-oHg5SJYRHA0.mkv"
-    
-
     
     private func beginDownloadFile() {
         print("start downloading")
